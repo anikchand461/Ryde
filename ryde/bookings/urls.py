@@ -10,5 +10,6 @@ urlpatterns = [
     path('my/', views.MyBookingsView.as_view(), name='my_bookings'),
     path('provider/', views.ProviderBookingsView.as_view(), name='provider_bookings'),
     path('accept/<int:booking_id>/', views.accept_booking, name='accept_booking'),
-    path('<int:pk>/', views.DetailView.as_view(model=Booking, template_name='bookings/detail.html'), name='booking_detail'),
+    # Removed DetailView — we don't have a detail page yet
+    # If you want one later, we can add it
 ]

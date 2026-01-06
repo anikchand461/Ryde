@@ -3,18 +3,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db.models.functions import Distance
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView
 
 from .models import Booking
 from .forms import BookingCreateForm
-from core.models import Location
 from services.models import RepairShop, TowingProvider
+
 
 @login_required
 def create_booking_step1(request):
-    """Step 1: Choose service type and issue"""
+    """Step 1: Choose service type, vehicle, and issue"""
     if request.user.user_type != 'owner':
         messages.error(request, "Only vehicle owners can create bookings.")
         return redirect('home')
@@ -22,7 +20,7 @@ def create_booking_step1(request):
     vehicles = request.user.vehicles.all()
     if not vehicles:
         messages.warning(request, "Please add a vehicle first.")
-        return redirect('home')  # Later: add vehicle page
+        return redirect('home')
 
     if request.method == 'POST':
         form = BookingCreateForm(request.POST)
@@ -40,7 +38,7 @@ def create_booking_step1(request):
 
 @login_required
 def create_booking_step2(request, booking_id):
-    """Step 2: Set current location and show map with providers"""
+    """Step 2: Show map with available providers"""
     booking = get_object_or_404(Booking, id=booking_id, owner=request.user, status='pending')
 
     providers = []
@@ -49,22 +47,19 @@ def create_booking_step2(request, booking_id):
     elif booking.service_type == 'towing':
         providers = TowingProvider.objects.filter(vehicle_types__contains=[booking.vehicle.vehicle_type])
 
-    # Filter providers with location
-    providers = providers.exclude(location__isnull=True).annotate(
-        distance=Distance('location__point', booking.user_location) if booking.user_location else None
-    )
+    # Only show providers who have a location set
+    providers = providers.exclude(location__isnull=True)
 
     context = {
         'booking': booking,
         'providers': providers,
-        'google_maps_api_key': 'YOUR_GOOGLE_MAPS_API_KEY'  # Replace later with settings
     }
     return render(request, 'bookings/create_step2.html', context)
 
 
 @login_required
 def select_provider(request, booking_id, provider_id):
-    """Select provider and finalize booking"""
+    """Owner selects a provider and sends booking request"""
     booking = get_object_or_404(Booking, id=booking_id, owner=request.user, status='pending')
 
     if booking.service_type == 'repair':
@@ -75,8 +70,8 @@ def select_provider(request, booking_id, provider_id):
         booking.towing_provider = provider
 
     booking.save()
-    messages.success(request, f"Booking request sent to {provider}")
-    return redirect('booking_detail', booking.id)
+    messages.success(request, f"Booking request sent to {provider}!")
+    return redirect('my_bookings')  # or to a detail page later
 
 
 @login_required
@@ -87,7 +82,7 @@ def cancel_booking(request, booking_id):
         booking.save()
         messages.success(request, "Booking cancelled successfully.")
     else:
-        messages.error(request, "Cannot cancel booking after 2 minutes.")
+        messages.error(request, "Cannot cancel — more than 2 minutes have passed.")
     return redirect('my_bookings')
 
 
@@ -120,7 +115,7 @@ def accept_booking(request, booking_id):
     if booking.provider_user != request.user:
         messages.error(request, "Not authorized.")
         return redirect('provider_bookings')
-    
+
     booking.status = 'accepted'
     booking.accepted_at = timezone.now()
     booking.save()

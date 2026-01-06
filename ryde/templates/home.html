@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="text-center py-5">
     <h1 class="display-4">Welcome to Ryde</h1>
@@ -6,25 +7,42 @@
 
     {% if user.is_authenticated %}
         {% if user.user_type == 'owner' %}
-            <h4>Your Vehicles</h4>
+            <h4 class="mt-5">Your Vehicles</h4>
             {% if user.vehicles.exists %}
-                <ul class="list-group w-50 mx-auto">
+                <div class="row justify-content-center">
                     {% for vehicle in user.vehicles.all %}
-                        <li class="list-group-item">{{ vehicle }}</li>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body text-start">
+                                    <h5>{{ vehicle.name }} {{ vehicle.model }}</h5>
+                                    <p><strong>Plate:</strong> {{ vehicle.vehicle_number }}</p>
+                                    <p><strong>Type:</strong> {{ vehicle.get_vehicle_type_display }}</p>
+                                </div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </ul>
-                <a href="#" class="btn btn-success mt-3">Add New Vehicle</a>
+                </div>
+                <a href="{% url 'add_vehicle' %}" class="btn btn-success btn-lg mt-3">Add Another Vehicle</a>
             {% else %}
-                <p>No vehicles added yet.</p>
-                <a href="#" class="btn btn-success">Add Your First Vehicle</a>
+                <p class="mt-4 lead">You haven't added any vehicles yet.</p>
+                <a href="{% url 'add_vehicle' %}" class="btn btn-primary btn-lg">Add Your First Vehicle</a>
             {% endif %}
-        {% elif user.user_type == 'repair_shop' %}
-            <p>Manage your repair shop profile soon.</p>
-        {% elif user.user_type == 'towing' %}
-            <p>Manage your towing service soon.</p>
+
+            <div class="mt-4">
+                <a href="{% url 'create_booking_step1' %}" class="btn btn-warning btn-lg">Create New Booking</a>
+            </div>
+
+        {% elif user.user_type == 'repair_shop' or user.user_type == 'towing' %}
+            <h4 class="mt-5">Provider Dashboard</h4>
+            <p>Welcome, {{ user.get_full_name|default:user.username }}!</p>
+            <a href="{% url 'provider_bookings' %}" class="btn btn-info btn-lg me-3">View Incoming Bookings</a>
+            <a href="{% url 'setup_profile' %}" class="btn btn-outline-info btn-lg">Update Profile</a>
         {% endif %}
 
-        <a href="{% url 'profile' %}" class="btn btn-primary btn-lg mt-4">My Profile</a>
+        <div class="mt-4">
+            <a href="{% url 'profile' %}" class="btn btn-secondary btn-sm">My Profile</a>
+        </div>
+
     {% else %}
         <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">Get Started</a>
         <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Login</a>

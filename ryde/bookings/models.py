@@ -1,7 +1,7 @@
 # bookings/models.py
 from django.db import models
 from django.utils import timezone
-from django.contrib.gis.db.models import PointField
+# from django.contrib.gis.db.models import PointField
 
 from accounts.models import CustomUser
 from core.models import Vehicle, Location, CAR_ISSUES, BIKE_ISSUES, OTHER_VEHICLE_ISSUES
@@ -51,7 +51,10 @@ class Booking(models.Model):
     description = models.TextField(blank=True)
 
     # User location at time of booking
-    user_location = PointField(geography=True, null=True, blank=True)
+    # user_location = PointField(geography=True, null=True, blank=True)
+    user_location_latitude = models.FloatField(null=True, blank=True)
+    user_location_longitude = models.FloatField(null=True, blank=True)
+    user_address = models.TextField(blank=True)
     user_address = models.TextField(blank=True)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -85,3 +88,7 @@ class Booking(models.Model):
         elif self.towing_provider:
             return self.towing_provider.user
         return None
+
+
+
+

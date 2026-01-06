@@ -1,6 +1,6 @@
 # services/models.py
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
+# from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
@@ -18,10 +18,10 @@ class ServiceProviderBase(models.Model):
         on_delete=models.CASCADE,
         related_name='%(class)s_profile'
     )
-    vehicle_types = ArrayField(
-        models.CharField(max_length=10, choices=VEHICLE_TYPE_CHOICES),
+    vehicle_types = models.JSONField(
+        default=list,
         blank=True,
-        help_text="Select one or more vehicle types handled."
+        help_text="List of vehicle types handled, e.g., ['car', 'bike']"
     )
     location = models.OneToOneField(
         Location,
@@ -46,27 +46,26 @@ class ServiceProviderBase(models.Model):
         abstract = True
 
     def __str__(self):
-        return f"{self.user.get_full_name() or self.user.email} - {self.user.get_user_type_display()}"
-
+        return f"{self.user.get_full_name() or self.user.email} - {self.user.get_user_type_display()}"        
 
 class RepairShop(ServiceProviderBase):
     """
     Model for Repair Shops/Mechanics.
     """
-    car_issues = ArrayField(
-        models.CharField(max_length=50, choices=CAR_ISSUES),
+    car_issues = models.JSONField(
+        default=list,
         blank=True,
-        default=list
+        help_text="List of car issues handled, e.g., ['engine_failure', 'battery_dead']"
     )
-    bike_issues = ArrayField(
-        models.CharField(max_length=50, choices=BIKE_ISSUES),
+    bike_issues = models.JSONField(
+        default=list,
         blank=True,
-        default=list
+        help_text="List of bike issues handled"
     )
-    other_issues = ArrayField(
-        models.CharField(max_length=50, choices=OTHER_VEHICLE_ISSUES),
+    other_issues = models.JSONField(
+        default=list,
         blank=True,
-        default=list
+        help_text="List of other vehicle issues handled"
     )
 
     class Meta:

@@ -1,7 +1,7 @@
 # core/models.py
 from django.db import models
-from django.contrib.gis.db import models as gis_models
-from django.contrib.gis.geos import Point
+# from django.contrib.gis.db import models as gis_models
+# from django.contrib.gis.geos import Point
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
@@ -83,18 +83,42 @@ class Vehicle(models.Model):
         ordering = ['-created_at']
 
 
+# class Location(models.Model):
+#     """
+#     Reusable location model with geospatial PointField.
+#     Used by: Repair Shops, Towing Providers, and temporary user location during booking.
+#     """
+#     name = models.CharField(max_length=200, blank=True, help_text="e.g., Shop Name or 'User Current Location'")
+#     point = gis_models.PointField(default=Point(0.0, 0.0), geography=True)  # Longitude, Latitude
+#     address = models.TextField(blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#
+#     def __str__(self):
+#         return self.name or f"Location ({self.point.coords[1]:.4f}, {self.point.coords[0]:.4f})"
+#
+#     class Meta:
+#         verbose_name = 'Location'
+#         verbose_name_plural = 'Locations'
+
+
+# core/models.py (replace the Location class only)
+
 class Location(models.Model):
     """
-    Reusable location model with geospatial PointField.
-    Used by: Repair Shops, Towing Providers, and temporary user location during booking.
+    Simple location without GeoDjango — just lat/lng
     """
-    name = models.CharField(max_length=200, blank=True, help_text="e.g., Shop Name or 'User Current Location'")
-    point = gis_models.PointField(default=Point(0.0, 0.0), geography=True)  # Longitude, Latitude
+    name = models.CharField(max_length=200, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     address = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.name or f"Location ({self.point.coords[1]:.4f}, {self.point.coords[0]:.4f})"
+        if self.name:
+            return self.name
+        if self.latitude and self.longitude:
+            return f"{self.latitude:.4f}, {self.longitude:.4f}"
+        return "No location set"
 
     class Meta:
         verbose_name = 'Location'

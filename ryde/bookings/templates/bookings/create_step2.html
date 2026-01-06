@@ -1,39 +1,124 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Booking for: {{ booking.vehicle }}</h3>
-<p><strong>Issue:</strong> {{ booking.get_issue_display|default:booking.issue }}</p>
+<div class="container">
+    <h3 class="my-4">Select a Service Provider</h3>
+    <p><strong>Vehicle:</strong> {{ booking.vehicle }}</p>
+    <p><strong>Issue:</strong> {{ booking.issue }}</p>
+    <p><strong>Description:</strong> {{ booking.description|default:"None" }}</p>
 
-<div id="map" style="height: 400px; width: 100%; margin: 20px 0;"></div>
+    <div id="map" style="height: 500px; width: 100%; margin-bottom: 20px; border: 2px solid #007bff; border-radius: 8px;"></div>
 
-<h4>Nearby Providers</h4>
-<ul class="list-group">
-    {% for provider in providers %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ provider }}
-            <a href="{% url 'select_provider' booking.id provider.id %}" class="btn btn-success">Book This</a>
-        </li>
-    {% empty %}
-        <li class="list-group-item">No providers available nearby.</li>
-    {% endfor %}
-</ul>
+    <h4>Nearby Providers</h4>
+    {% if providers %}
+        <div class="row">
+            {% for provider in providers %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ provider }}</h5>
+                            <p class="card-text">
+                                <strong>Vehicle Types:</strong> {{ provider.vehicle_types|join:", " }}<br>
+                                {% if booking.service_type == 'repair' %}
+                                    <strong>Handles your issue:</strong> Yes
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'select_provider' booking.id provider.id %}" class="btn btn-success">Book This Provider</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="alert alert-warning">No providers available nearby for your vehicle type.</p>
+    {% endif %}
 
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
+    <a href="{% url 'my_bookings' %}" class="btn btn-secondary mt-3">Back to My Bookings</a>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
 <script>
-function initMap() {
-    const map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 12,
-        center: { lat: 20.5937, lng: 78.9629 }, // Default India center
-    });
+    // Default center (India approximate)
+    const defaultCenter = [20.5937, 78.9629];
+    const defaultZoom = 5;
 
-    // Add user location marker if available (via JS geolocation later)
-    // Add provider markers
-    {% for provider in providers %}
-        new google.maps.Marker({
-            position: { lat: {{ provider.location.point.y }}, lng: {{ provider.location.point.x }} },
-            map: map,
-            title: "{{ provider }}"
-        });
-    {% endfor %}
-}
+    // Initialize map
+    const map = L.map('map').setView(defaultCenter, defaultZoom);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Array to store provider markers
+    const providerMarkers = [];
+
+    {% if providers %}
+      {% for provider in providers %}
+          {% if provider.location.latitude and provider.location.longitude %}
+              const lat = {{ provider.location.latitude }};
+              const lng = {{ provider.location.longitude }};
+
+              const marker = L.marker([lat, lng]).addTo(map)
+                  .bindPopup(`
+                      <strong>{{ provider }}</strong><br>
+                      Vehicle Types: {{ provider.vehicle_types|join:", " }}<br>
+                      <a href="{% url 'select_provider' booking.id provider.id %}">Book This Provider</a>
+                  `);
+
+              providerMarkers.push(marker);
+          {% endif %}
+      {% endfor %}
+
+        // Fit map to show all provider markers
+        if (providerMarkers.length > 0) {
+            const group = new L.featureGroup(providerMarkers);
+            map.fitBounds(group.getBounds().pad(0.5));  // Add some padding
+        }
+    {% endif %}
+
+    // Auto-detect user location (browser geolocation)
+    const locateButton = L.control({position: 'topright'});
+    locateButton.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        div.innerHTML = '<a href="#" title="Locate Me" role="button">📍</a>';
+        div.style.backgroundColor = 'white';
+        div.style.width = '30px';
+        div.style.height = '30px';
+        div.style.textAlign = 'center';
+        div.style.cursor = 'pointer';
+        div.onclick = function(e) {
+            e.preventDefault();
+            map.locate({setView: true, maxZoom: 15});
+        };
+        return div;
+    };
+    locateButton.addTo(map);
+
+    // Show user location marker + accuracy circle
+    function onLocationFound(e) {
+        const radius = e.accuracy / 2;
+
+        L.marker(e.latlng).addTo(map)
+            .bindPopup("You are here (approx)").openPopup();
+
+        L.circle(e.latlng, radius).addTo(map);
+    }
+
+    map.on('locationfound', onLocationFound);
+
+    function onLocationError(e) {
+        alert("Location access denied or unavailable. Map shows providers across India.");
+    }
+
+    map.on('locationerror', onLocationError);
 </script>
 {% endblock %}
