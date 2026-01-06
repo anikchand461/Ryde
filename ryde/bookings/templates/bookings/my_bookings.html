@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>My Bookings</h2>
+{% for booking in bookings %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>{{ booking.service_type|title }} - {{ booking.vehicle }}</h5>
+            <p>Status: <strong>{{ booking.get_status_display }}</strong></p>
+            {% if booking.can_cancel %}
+                <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-danger btn-sm">Cancel (2 min window)</a>
+            {% endif %}
+        </div>
+    </div>
+{% empty %}
+    <p>No bookings yet.</p>
+{% endfor %}
+<a href="{% url 'create_booking_step1' %}" class="btn btn-primary">Create New Booking</a>
+{% endblock %}

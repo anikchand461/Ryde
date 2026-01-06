@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Incoming Booking Requests</h2>
+{% for booking in bookings %}
+    {% if booking.status == 'pending' %}
+    <div class="card mb-3 border-primary">
+        <div class="card-body">
+            <p><strong>From:</strong> {{ booking.owner }}</p>
+            <p><strong>Vehicle:</strong> {{ booking.vehicle }}</p>
+            <p><strong>Issue:</strong> {{ booking.issue }}</p>
+            <a href="{% url 'accept_booking' booking.id %}" class="btn btn-success">Accept</a>
+        </div>
+    </div>
+    {% endif %}
+{% empty %}
+    <p>No pending requests.</p>
+{% endfor %}
+{% endblock %}

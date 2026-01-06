@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Your {{ user.user_type|title }} Profile</h2>
+<p><strong>Vehicle Types:</strong> {{ profile.vehicle_types|join:", "|default:"None" }}</p>
+<p><strong>Timings:</strong> {{ profile.timings|default:"Not set" }}</p>
+<p><strong>Amenities:</strong> {{ profile.amenities|default:"None" }}</p>
+{% if user.user_type == 'repair_shop' %}
+    <p><strong>Car Issues:</strong> {{ profile.car_issues|join:", "|default:"None" }}</p>
+    <p><strong>Bike Issues:</strong> {{ profile.bike_issues|join:", "|default:"None" }}</p>
+    <p><strong>Other Issues:</strong> {{ profile.other_issues|join:", "|default:"None" }}</p>
+{% elif user.user_type == 'towing' %}
+    <p><strong>Towing Types:</strong> {{ profile.towing_types|default:"None" }}</p>
+    <p><strong>Response Time:</strong> {{ profile.response_time|default:"Not set" }}</p>
+{% endif %}
+<p><strong>Location:</strong> {{ profile.location|default:"Not set" }}</p>
+<a href="{% url 'setup_profile' %}" class="btn btn-primary">Edit Profile</a>
+{% endblock %}

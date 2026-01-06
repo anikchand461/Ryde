@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Your Profile</h2>
+<p><strong>Username:</strong> {{ user.username }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+<p><strong>User Type:</strong> {{ user.get_user_type_display }}</p>
+<p><strong>Phone:</strong> {{ user.phone_number|default:"Not provided" }}</p>
+<p><strong>WhatsApp:</strong> {{ user.whatsapp_number|default:"Not provided" }}</p>
+{% endblock %}
